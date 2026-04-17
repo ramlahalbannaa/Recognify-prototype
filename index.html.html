@@ -1,0 +1,1965 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recognify</title>
+  <style>
+     :root {
+      --bg: #060606;
+      --panel: #161616;
+      --panel-2: #1d1d1f;
+      --card-bg: #151515;
+      --input-bg: #111111;
+      --text: #ffffff;
+      --muted: #a1a1aa;
+      --primary: #f5f5f5;
+      --primary-2: #e4e4e7;
+      --danger: #ff453a;
+      --success: #30d158;
+      --border: rgba(255,255,255,0.14);
+      --shadow: 0 10px 28px rgba(0,0,0,0.28);
+      --glass-shadow: 0 10px 28px rgba(0,0,0,0.28);
+      --radius: 20px;
+      --font-scale: 1;
+      --outer-bg: radial-gradient(circle at top, #2a2a2d 0%, #121214 34%, #050505 100%);
+      --nav-bg: #111111;
+      --nav-border: rgba(255,255,255,0.1);
+      --seg-bg: #1a1a1a;
+      --shine: #1a1a1a;
+    }
+    .theme-light {
+      --bg: #eef0f4;
+      --panel: #ffffff;
+      --panel-2: #f7f8fa;
+      --card-bg: #ffffff;
+      --input-bg: #ffffff;
+      --text: #0a0a0b;
+      --muted: #5f6670;
+      --primary: #0f172a;
+      --primary-2: #111827;
+      --border: rgba(15,23,42,0.12);
+      --shadow: 0 10px 24px rgba(15,23,42,0.08);
+      --glass-shadow: 0 10px 24px rgba(15,23,42,0.08);
+      --outer-bg: radial-gradient(circle at top, #ffffff 0%, #dfe4ea 42%, #cdd3db 100%);
+      --nav-bg: #ffffff;
+      --nav-border: rgba(15,23,42,0.1);
+      --seg-bg: #eef1f4;
+      --shine: #f3f4f6;
+    }
+    *, html, body { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: var(--outer-bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+      font-size: calc(17px * var(--font-scale));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+    button, input, select, textarea { font: inherit; }
+
+    /* ── iPhone frame ── */
+    .iphone-frame {
+      width: 393px;
+      height: 852px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.01));
+      border-radius: 55px;
+      box-shadow: 0 0 0 12px #1d1d1f, 0 0 0 13px #0a0a0a, 0 30px 80px rgba(0,0,0,0.55);
+      position: relative;
+      overflow: hidden;
+    }
+    .dynamic-island {
+      position: absolute;
+      top: 20px; left: 50%;
+      transform: translateX(-50%);
+      width: 126px; height: 37px;
+      background: #000;
+      border-radius: 28px;
+      z-index: 1000;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+      pointer-events: none;
+    }
+    .status-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 54px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 8px 32px 0;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      z-index: 999;
+      pointer-events: none;
+    }
+    .status-right { display: flex; align-items: center; gap: 6px; }
+    .app {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      position: relative; overflow: hidden;
+    }
+    .app::before,
+    .app::after { content: none; }
+
+    /* ── Screens ── */
+    .screen { display: none; height: 852px; padding: 64px 20px 110px; overflow-y: auto; overflow-x: hidden; -ms-overflow-style: none; scrollbar-width: none; }
+    .screen::-webkit-scrollbar { display: none; }
+    .screen.active { display: block; }
+
+    /* ── Floating controls (lang + help) ── */
+    .top-controls {
+      position: absolute;
+      left: 20px; right: 20px; bottom: 90px;
+      z-index: 1001;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+    }
+    .top-controls > * { pointer-events: auto; }
+    .lang-selector { position: relative; display: flex; align-items: center; gap: 6px; }
+    .lang-toggle {
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      border: none; border-radius: 20px;
+      padding: 6px 12px;
+      color: var(--text); font-size: 15px; font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lang-menu {
+      display: none;
+      position: absolute; bottom: 46px; right: 0;
+      background: rgba(28,28,30,0.95);
+      backdrop-filter: blur(30px);
+      border-radius: 14px;
+      overflow: hidden;
+      min-width: 120px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .lang-menu.show { display: block; }
+    .lang-option {
+      background: transparent; border: none;
+      color: var(--text); padding: 14px 16px;
+      width: 100%; text-align: left; font-size: 16px;
+      cursor: pointer;
+      border-bottom: 0.5px solid rgba(255,255,255,0.1);
+    }
+    .lang-option:last-child { border-bottom: none; }
+    .lang-option.active { color: var(--primary); font-weight: 600; }
+    .help-btn {
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      border: none; border-radius: 50%;
+      width: 36px; height: 36px;
+      display: grid; place-items: center;
+      color: var(--text); cursor: pointer;
+      font-weight: 700; font-size: 18px;
+    }
+
+    /* ── Help modal ── */
+    .help-modal {
+      display: none;
+      position: absolute; inset: 0;
+      z-index: 2000;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(10px);
+      place-items: center;
+      padding: 20px;
+    }
+    .help-modal.show { display: grid; }
+    .help-content {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      max-width: 340px; width: 100%;
+      box-shadow: var(--shadow);
+    }
+    .help-content h3 { margin: 0 0 16px; }
+    .help-content p { margin: 0 0 20px; line-height: 1.6; }
+
+    /* ── Brand ── */
+    .brand { display: flex; align-items: center; gap: 12px; margin-top: 12px; margin-bottom: 18px; }
+    .logo-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .logo {
+      width: 58px; height: 58px;
+      border-radius: 18px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      display: grid; place-items: center;
+      box-shadow: var(--shadow); color: var(--text);
+    }
+    .logo-wordmark { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
+    .brand-text h1, .brand-text h2, .brand-text p { margin: 0; }
+    .brand-text h1 { font-size: 1.55rem; }
+    .brand-text p { color: var(--muted); margin-top: 4px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before { content: none; }
+    .card h3, .card h4, .card p { margin-top: 0; }
+    .title-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .warning { border-inline-start: 4px solid #ffc857; background: rgba(255,200,87,0.08); color: #ffffff; }
+    .danger-box { border-inline-start: 4px solid var(--danger); background: rgba(255,107,107,0.08); color: #ffffff; }
+    .success-box { border-inline-start: 4px solid var(--success); background: rgba(78,203,113,0.08); color: #ffffff; }
+
+    /* ── Form elements ── */
+    .input, .textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--input-bg);
+      color: var(--text);
+      padding: 16px 14px;
+      margin-bottom: 8px;
+      outline: none;
+      box-shadow: none;
+    }
+    .input.invalid, .textarea.invalid { border-color: rgba(255,107,107,0.8); box-shadow: 0 0 0 1px rgba(255,107,107,0.35); }
+    .textarea { min-height: 100px; resize: vertical; }
+    .field-label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 0.92rem; text-align: start; font-weight: 700; }
+    .required-star { color: var(--danger); margin-inline-start: 4px; }
+    .error-text { display: none; color: var(--danger); font-size: 0.86rem; text-align: start; margin: -2px 0 10px; }
+    .error-text.show { display: block; }
+    .checkbox-row { display: flex; align-items: flex-start; gap: 12px; text-align: start; margin: 12px 0 4px; }
+    .checkbox-row input { width: 22px; height: 22px; margin-top: 2px; accent-color: var(--primary); flex-shrink: 0; }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%; min-height: 56px;
+      border: 1px solid var(--border); border-radius: 18px;
+      background: var(--primary); color: var(--bg);
+      font-weight: 700; padding: 14px 18px;
+      cursor: pointer; box-shadow: var(--shadow);
+    }
+    .btn.secondary { background: #232323; color: var(--text); }
+    .btn.ghost { background: transparent; border: 1px solid var(--border); box-shadow: none; color: var(--text); }
+    .btn.danger { background: var(--danger); }
+    .btn.small { width: auto; min-height: 44px; border-radius: 14px; padding: 10px 14px; font-weight: 700; }
+    .icon-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+    .text-link { color: var(--primary-2); background: none; border: none; padding: 0; cursor: pointer; font-weight: 600; }
+    .link-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; }
+
+    /* ── Toolbar ── */
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    .toolbar-title { font-size: 1.35rem; font-weight: 800; margin: 0; }
+    .toolbar-sub { margin: 4px 0 0; color: var(--muted); }
+    .frosted-chip { background: var(--panel); border: 1px solid var(--border); box-shadow: var(--shadow); }
+
+    /* ── People list ── */
+    .people-list { display: grid; gap: 12px; }
+    .person-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px; border-radius: 22px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    .avatar {
+      width: 58px; height: 58px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.08));
+      border: 1px solid rgba(255,255,255,0.14);
+      display: grid; place-items: center;
+      font-weight: 800; color: white;
+      overflow: hidden; flex-shrink: 0;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .person-meta { flex: 1; text-align: start; }
+    .person-name { margin: 0; font-size: 1.08rem; font-weight: 800; }
+    .person-sub { margin: 4px 0 0; color: var(--muted); }
+    .checkmark { width: 24px; height: 24px; border: 2px solid var(--border); border-radius: 50%; display: none; place-items: center; color: var(--bg); background: var(--primary); }
+    .edit-mode .checkmark { display: grid; }
+    .checkmark.hidden-mark { background: transparent; color: transparent; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 999px; padding: 8px 12px; color: var(--muted); background: rgba(255,255,255,0.03); }
+
+    /* ── Profile ── */
+    .profile-hero { display: flex; align-items: center; gap: 14px; text-align: start; }
+    .profile-hero .avatar { width: 72px; height: 72px; border-radius: 22px; }
+    .detail-grid { display: grid; gap: 12px; text-align: start; margin-top: 14px; }
+    .detail-item { background: var(--panel-2); border: 1px solid var(--border); border-radius: 18px; padding: 12px; box-shadow: var(--shadow); }
+    .detail-item label { display: block; color: var(--muted); margin-bottom: 6px; font-size: 0.9rem; }
+
+    /* ── Camera ── */
+    .camera-view {
+      border-radius: 34px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,0.18), transparent 32%),
+        linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03) 18%, rgba(5,5,6,0.58) 100%),
+        linear-gradient(180deg, #1a1a1d 0%, #0e0e10 100%);
+      border: 1px solid rgba(255,255,255,0.14);
+      min-height: 430px;
+      position: relative; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow);
+    }
+    .camera-ring { width: 220px; height: 220px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.5); box-shadow: none; display: grid; place-items: center; color: #d4d4d8; text-align: center; padding: 20px; background: rgba(0,0,0,0.18); }
+    .floating-card {
+      position: absolute; inset-inline: 14px; bottom: 16px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 24px; padding: 14px;
+      display: none; text-align: start;
+      box-shadow: var(--shadow);
+    }
+    .floating-card.show { display: block; }
+
+    /* ── Settings ── */
+    .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .setting-row:last-child { border-bottom: none; }
+    .segmented { display: inline-flex; background: var(--seg-bg); border: 1px solid var(--border); padding: 4px; border-radius: 999px; gap: 4px; }
+    .segmented button { border: none; background: transparent; color: var(--muted); min-width: 76px; min-height: 42px; border-radius: 999px; cursor: pointer; padding: 0 14px; font-weight: 700; }
+    .segmented button.active { background: var(--primary); color: var(--bg); }
+
+    /* ── Misc ── */
+    .muted { color: var(--muted); }
+    .tiny { font-size: 0.9rem; }
+    .nav-icon, .inline-icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: block; }
+    .inline-icon { width: 18px; height: 18px; }
+    .logo-icon { width: 30px; height: 30px; stroke: currentColor; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .hidden { display: none !important; }
+
+
+    .layout-choice-grid { display: grid; gap: 14px; }
+    .layout-option {
+      text-align: start;
+      padding: 18px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .layout-option:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.22); }
+    .layout-option h3 { margin-bottom: 8px; }
+    .layout-option p { margin: 0 0 12px; }
+    .layout-preview {
+      border-radius: 18px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+      display: grid;
+      gap: 10px;
+    }
+    .layout-preview.modern .preview-bar,
+    .layout-preview.modern .preview-line,
+    .layout-preview.modern .preview-chip,
+    .layout-preview.simple .preview-bar,
+    .layout-preview.simple .preview-line,
+    .layout-preview.simple .preview-chip {
+      background: rgba(255,255,255,0.14);
+      border-radius: 999px;
+    }
+    .preview-bar { height: 12px; width: 52%; }
+    .preview-line { height: 10px; }
+    .preview-chip-row { display:flex; gap:8px; flex-wrap:wrap; }
+    .preview-chip { height: 28px; width: 84px; }
+    .layout-preview.simple { gap: 12px; }
+    .layout-preview.simple .preview-bar { width: 68%; height: 16px; }
+    .layout-preview.simple .preview-line { height: 14px; }
+    .layout-preview.simple .preview-chip { height: 42px; width: 100%; border-radius: 14px; }
+
+    body.ui-accessible { --font-scale: 1.12; }
+    body.ui-accessible .screen { padding-inline: 16px; }
+    body.ui-accessible .card { border-radius: 22px; padding: 20px; }
+    body.ui-accessible .btn { min-height: 62px; border-radius: 20px; font-size: 1.02rem; }
+    body.ui-accessible .btn.small { min-height: 50px; }
+    body.ui-accessible .input,
+    body.ui-accessible .textarea,
+    body.ui-accessible .person-row,
+    body.ui-accessible .cam-action-btn,
+    body.ui-accessible .detail-item { border-radius: 20px; padding: 18px 16px; }
+    body.ui-accessible .tiny,
+    body.ui-accessible .toolbar-sub,
+    body.ui-accessible .muted,
+    body.ui-accessible .field-label { font-size: 0.98rem; line-height: 1.5; }
+    body.ui-accessible .toolbar { align-items: flex-start; gap: 14px; }
+    body.ui-accessible .toolbar > div[style*='text-align:center'] { text-align: start !important; }
+    body.ui-accessible .toolbar-title { font-size: 1.5rem; }
+    body.ui-accessible .title-row,
+    body.ui-accessible .profile-hero,
+    body.ui-accessible .setting-row { align-items: flex-start; }
+    body.ui-accessible .title-row,
+    body.ui-accessible .setting-row,
+    body.ui-accessible .link-row,
+    body.ui-accessible .checkbox-row { flex-direction: column; }
+    body.ui-accessible .actions,
+    body.ui-accessible #screen-camera > div[style*='grid-template-columns:1fr 1fr'],
+    body.ui-accessible #screen-settings > .card > div[style*='grid-template-columns:1fr 1fr'] { grid-template-columns: 1fr; }
+    body.ui-accessible .camera-view { min-height: 360px; border-radius: 24px; }
+    body.ui-accessible .camera-ring { width: 180px; height: 180px; }
+    body.ui-accessible .bottom-nav { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 12px 10px 22px; }
+    body.ui-accessible .nav-btn { min-height: 64px; }
+    body.ui-accessible .nav-btn span { font-size: 0.82rem; }
+    .accessible-only { display: none; }
+    body.ui-accessible .accessible-only { display: block; }
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: absolute; left: 10px; right: 10px; bottom: 10px;
+      background: var(--nav-bg);
+      border: 1px solid var(--nav-border);
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      padding: 10px 10px 18px;
+      z-index: 10;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+    .nav-btn { display: grid; place-items: center; gap: 4px; color: var(--muted); background: transparent; border: none; min-height: 56px; border-radius: 18px; cursor: pointer; padding: 8px; transition: all 0.2s; }
+    .nav-btn.active { color: white; background: #232323; box-shadow: none; }
+    .nav-btn span { font-size: 0.72rem; font-weight: 700; }
+    .home-indicator { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); width: 134px; height: 5px; background: rgba(255,255,255,0.3); border-radius: 100px; z-index: 20; }
+
+    /* ── Camera action buttons ── */
+    .cam-action-btn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 7px; padding: 14px 10px;
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 20px; color: var(--text);
+      cursor: pointer; font-size: 0.82rem; font-weight: 700;
+      box-shadow: var(--shadow);
+    }
+    .cam-action-btn svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── Settings icon wrap ── */
+    .setting-icon-wrap {
+      width: 36px; height: 36px; border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06)); color: var(--text);
+      border: 1px solid rgba(255,255,255,0.14);
+      display: grid; place-items: center; flex-shrink: 0;
+      box-shadow: var(--shadow);
+    }
+    .setting-icon-wrap svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ── Language choice buttons ── */
+    .lang-choice-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 16px 10px;
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 18px; color: var(--muted);
+      cursor: pointer; font-size: 0.88rem; font-weight: 700;
+      transition: all 0.2s;
+      box-shadow: var(--shadow);
+    }
+    .lang-choice-btn svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .lang-choice-btn.active { border-color: rgba(255,255,255,0.24); color: var(--text); background: rgba(255,255,255,0.08); }
+
+    /* ── Icon toggle (voice on/off) ── */
+    .icon-toggle-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      background: transparent; border: none; cursor: pointer; color: var(--muted);
+    }
+    .icon-toggle-btn.active #voice-toggle-knob { transform: translateX(20px); }
+    .icon-toggle-btn.active rect { fill: var(--primary); }
+
+    /* ── Light mode contrast fixes ── */
+    .theme-light .card::before { content: none; }
+    .theme-light .warning {
+      border-inline-start-color: #b77900;
+      background: rgba(255, 200, 87, 0.18);
+      color: #ffffff;
+    }
+    .theme-light .danger-box {
+      background: rgba(255, 69, 58, 0.12);
+      color: #ffffff;
+    }
+    .theme-light .success-box {
+      background: rgba(48, 209, 88, 0.12);
+      color: #ffffff;
+    }
+    .warning h3, .warning p, .warning .tiny,
+    .danger-box h3, .danger-box p, .danger-box .tiny,
+    .success-box h3, .success-box p, .success-box .tiny { color: inherit; }
+    .theme-light .input,
+    .theme-light .textarea,
+    .theme-light .frosted-chip,
+    .theme-light .pill,
+    .theme-light .person-row,
+    .theme-light .detail-item,
+    .theme-light .cam-action-btn,
+    .theme-light .layout-option,
+    .theme-light .layout-preview,
+    .theme-light .stat-chip,
+    .theme-light .history-empty,
+    .theme-light .id-card,
+    .theme-light .floating-card {
+      border-color: rgba(15,23,42,0.12);
+      box-shadow: 0 10px 26px rgba(15,23,42,0.08);
+    }
+    .theme-light .btn.secondary {
+      background: #eef1f4;
+      border-color: rgba(15,23,42,0.1);
+      color: var(--text);
+    }
+    .theme-light .btn.ghost {
+      background: transparent;
+      border-color: rgba(15,23,42,0.1);
+      color: var(--text);
+    }
+    .theme-light .nav-btn.active {
+      color: var(--text);
+      background: #e7ebf0;
+      box-shadow: none;
+    }
+    .theme-light .home-indicator {
+      background: rgba(15,23,42,0.22);
+    }
+    .theme-light .setting-row {
+      border-bottom-color: rgba(15,23,42,0.08);
+    }
+    .theme-light .setting-icon-wrap {
+      background: #f3f4f6;
+      border-color: rgba(15,23,42,0.1);
+      color: var(--text);
+    }
+    .theme-light .lang-choice-btn.active {
+      border-color: rgba(15,23,42,0.14);
+      color: var(--text);
+      background: #eef1f4;
+    }
+    .theme-light .segmented button.active {
+      background: #111827;
+      color: #ffffff;
+    }
+    .theme-light .camera-view {
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,0.35), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05) 18%, rgba(15,23,42,0.28) 100%),
+        linear-gradient(180deg, #c9d2dc 0%, #7d8795 100%);
+      border-color: rgba(15,23,42,0.12);
+    }
+    .theme-light .camera-ring {
+      border-color: rgba(255,255,255,0.9);
+      box-shadow: none;
+      color: rgba(255,255,255,0.96);
+      background: rgba(15,23,42,0.14);
+    }
+    .theme-light .floating-card {
+      background: #ffffff;
+    }
+    .theme-light .avatar {
+      color: #0a0a0b;
+      border-color: rgba(15,23,42,0.1);
+    }
+
+    /* ── Refined product surfaces ── */
+    .hero-card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 22px;
+      display: grid;
+      gap: 18px;
+    }
+    .hero-meta { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; }
+    .hero-kicker { color: var(--muted); font-size: 0.82rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .hero-title { font-size: 1.6rem; font-weight: 850; line-height: 1.08; margin: 6px 0; }
+    .hero-copy { color: var(--muted); line-height: 1.5; }
+    .hero-stats { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .stat-chip {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
+      background: var(--panel);
+      display:grid; gap:6px;
+    }
+    .stat-chip strong { font-size: 1.15rem; }
+    .section-label { color: var(--muted); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+    .history-list, .id-card-list { display:grid; gap: 14px; }
+    .history-empty {
+      border: 1px dashed rgba(255,255,255,0.18);
+      border-radius: 24px;
+      padding: 18px;
+      color: var(--muted);
+      text-align: start;
+      background: rgba(255,255,255,0.02);
+    }
+    .quick-actions { display:grid; grid-template-columns: 1.2fr 1fr; gap: 10px; }
+
+    .id-card {
+      position: relative;
+      border-radius: 24px;
+      padding: 18px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: var(--panel-2);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .id-card::before { content: none; }
+    .id-card-header { display:flex; justify-content:space-between; align-items:flex-start; gap: 12px; margin-bottom: 14px; }
+    .id-card-badge {
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      padding: 7px 10px;
+      color: var(--muted);
+      font-size: 0.76rem;
+      background: var(--panel);
+    }
+    .id-card-grid { display:grid; grid-template-columns: 92px 1fr; gap: 14px; align-items:center; }
+    .id-card-avatar {
+      width: 92px; height: 112px; border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--panel);
+      overflow: hidden; display:grid; place-items:center;
+    }
+    .id-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .id-card-svg { width: 48px; height: 48px; opacity: 0.92; }
+    .id-card-name { font-size: 1.12rem; font-weight: 820; line-height: 1.15; margin: 0 0 6px; }
+    .id-card-role { color: var(--muted); margin: 0 0 12px; }
+    .id-card-lines { display:grid; gap: 8px; }
+    .id-line {
+      display:flex; justify-content:space-between; gap:10px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 8px; font-size: 0.86rem;
+    }
+    .id-line span:first-child { color: var(--muted); }
+    .id-card-actions { display:flex; justify-content:space-between; align-items:center; margin-top: 14px; }
+
+    .camera-page {
+      display:grid; gap: 14px;
+    }
+    .camera-stage {
+      position: relative;
+      min-height: 470px;
+      border-radius: 34px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #2a2a2d 0%, #141416 42%, #080808 100%);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.4);
+    }
+    .camera-stage::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.08), transparent 38%), linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.5));
+    }
+    .camera-topbar {
+      position:absolute; top: 18px; left: 18px; right: 18px;
+      display:flex; justify-content:space-between; align-items:center; gap:10px; z-index:2;
+    }
+    .camera-chip {
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(15,15,16,0.9);
+      color: #fff; border-radius: 999px;
+      padding: 10px 14px; font-size: 0.84rem; display:inline-flex; align-items:center; gap:8px;
+    }
+    .camera-guides {
+      position:absolute; inset: 0; z-index:1; display:grid; place-items:center;
+    }
+    .camera-focus {
+      width: 226px; height: 280px; border-radius: 36px;
+      border: 1.5px solid rgba(255,255,255,0.82);
+      box-shadow: 0 0 0 999px rgba(0,0,0,0.18);
+      position: relative;
+    }
+    .camera-focus::before, .camera-focus::after {
+      content:''; position:absolute; inset: 14px; border-radius: 26px;
+      border: 1px dashed rgba(255,255,255,0.22);
+    }
+    .camera-prompt {
+      position:absolute; top: calc(50% + 160px); left:50%; transform:translateX(-50%);
+      z-index:2; color:#f5f5f7; font-size:0.92rem; text-align:center; width:80%;
+    }
+    .camera-sheet {
+      position:absolute; left: 14px; right: 14px; bottom: 96px; z-index:3;
+      border-radius: 28px; padding: 16px;
+      background: rgba(10,10,11,0.94);
+      border: 1px solid rgba(255,255,255,0.1);
+      transform: translateY(14px); opacity: 0; pointer-events: none; transition: 0.25s ease;
+    }
+    .camera-sheet.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+    .camera-sheet-header { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; margin-bottom: 12px; }
+    .camera-sheet-name { font-size: 1.12rem; font-weight: 800; margin:0 0 4px; }
+    .camera-sheet-meta { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+    .camera-sheet-notes {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      margin-top: 12px; padding-top: 12px; color: rgba(255,255,255,0.9); line-height:1.45;
+    }
+    .camera-dock {
+      position:absolute; left:0; right:0; bottom:0; z-index:3;
+      padding: 16px 18px 22px;
+      background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.72) 30%, rgba(0,0,0,0.92));
+    }
+    .camera-controls {
+      display:grid; grid-template-columns: 74px 1fr 74px; align-items:center; gap: 14px;
+    }
+    .camera-side-btn {
+      width: 58px; height: 58px; border-radius: 18px; border:1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.07); color:#fff; display:grid; place-items:center; margin:0 auto; cursor:pointer;
+    }
+    .camera-shutter-wrap { display:grid; place-items:center; }
+    .camera-shutter {
+      width: 82px; height: 82px; border-radius: 50%;
+      border: 5px solid rgba(255,255,255,0.92); background: transparent; display:grid; place-items:center; cursor:pointer;
+      box-shadow: 0 0 0 6px rgba(255,255,255,0.08);
+    }
+    .camera-shutter::after { content:''; width: 64px; height: 64px; border-radius: 50%; background: #fff; }
+    .camera-tool-label { text-align:center; color: rgba(255,255,255,0.68); font-size: 0.75rem; margin-top:8px; }
+    .camera-subtools { display:grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+    body.ui-accessible .hero-stats,
+    body.ui-accessible .quick-actions,
+    body.ui-accessible .id-card-grid,
+    body.ui-accessible .camera-subtools,
+    body.ui-accessible .camera-controls { grid-template-columns: 1fr; }
+    body.ui-accessible .camera-stage { min-height: 560px; }
+    body.ui-accessible .camera-sheet { bottom: 170px; }
+    body.ui-accessible .camera-side-btn,
+    body.ui-accessible .camera-shutter { margin-inline-start: 0; }
+
+  </style>
+</head>
+<body>
+  <div class="iphone-frame">
+    <div class="dynamic-island"></div>
+
+    <div class="status-bar">
+      <span id="status-time">9:41</span>
+      <div class="status-right">
+        <!-- signal -->
+        <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M15.5 5.5C15.5 5.5 13.5 1.5 8.5 1.5C3.5 1.5 1.5 5.5 1.5 5.5C1.5 5.5 3.5 9.5 8.5 9.5C13.5 9.5 15.5 5.5 15.5 5.5Z" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8.5" cy="5.5" r="1.5"/></svg>
+        <!-- bars -->
+        <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="1" y="3" width="2" height="6" rx="0.5"/><rect x="4.5" y="2" width="2" height="8" rx="0.5"/><rect x="8" y="1" width="2" height="10" rx="0.5"/><rect x="11.5" y="0.5" width="2" height="11" rx="0.5"/></svg>
+        <!-- battery -->
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="currentColor"><rect x="1" y="1" width="18" height="10" rx="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="20" y="4" width="2.5" height="4" rx="0.5"/><rect x="3" y="3" width="14" height="6" rx="1"/></svg>
+      </div>
+    </div>
+
+    <div class="app" id="app">
+
+      <!-- Floating controls -->
+      <div class="top-controls">
+        <button class="help-btn" onclick="toggleHelpModal()" type="button" aria-label="Help">?</button>
+        <div class="lang-selector">
+          <button class="lang-toggle" onclick="toggleLangMenu()" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span id="current-lang">EN</span>
+          </button>
+          <div class="lang-menu" id="lang-menu">
+            <button class="lang-option active" onclick="selectLanguage('en', this)" type="button">English</button>
+            <button class="lang-option" onclick="selectLanguage('ar', this)" type="button">العربية</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help modal -->
+      <div class="help-modal" id="help-modal" onclick="if(event.target===this)toggleHelpModal()">
+        <div class="help-content">
+          <h3 data-i18n="howSystemWorks">How the system works</h3>
+          <p class="tiny" data-i18n="howSystemWorksCopy"></p>
+          <button class="btn" onclick="toggleHelpModal()" data-i18n="close" type="button">Close</button>
+        </div>
+      </div>
+
+      <!-- ── SCREEN: Auth ── -->
+      <section class="screen active" id="screen-auth" style="padding-top: 52px;">
+
+        <!-- Header: logo + title centered -->
+        <div style="display:flex; flex-direction:column; align-items:center; gap:14px; margin-bottom:28px; text-align:center;">
+          <div class="logo" style="width:68px; height:68px; border-radius:22px;">
+            <svg class="logo-icon" viewBox="0 0 24 24"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3.2"/></svg>
+          </div>
+          <div>
+            <div class="logo-wordmark" style="margin-bottom:6px;">Recognify</div>
+            <h1 style="margin:0 0 4px; font-size:1.75rem; font-weight:900;" data-i18n="welcomeHeading">Welcome back</h1>
+            <p class="muted tiny" style="margin:0;" data-i18n="authSubtitle">Helping you recognize people around you</p>
+          </div>
+        </div>
+
+        <!-- Consent notice -->
+        <div class="card warning" style="margin-bottom:20px;">
+          <h3 style="margin-bottom:8px;" data-i18n="consentTitle">Before you continue</h3>
+          <p class="tiny" style="margin:0;" data-i18n="consentNotice"></p>
+        </div>
+
+        <!-- Sign-in form -->
+        <div class="card" style="padding:22px;">
+          <h3 style="margin:0 0 20px; font-size:1.15rem;" data-i18n="signIn">Sign in to your account</h3>
+
+          <label class="field-label" for="login-email"><span data-i18n="emailLabel">Email</span><span class="required-star">*</span></label>
+          <input class="input" id="login-email" type="email" placeholder="Email" style="margin-bottom:4px;" />
+          <div class="error-text" id="login-email-error" data-i18n="emailRequired"></div>
+
+          <div style="height:12px;"></div>
+
+          <label class="field-label" for="login-password"><span data-i18n="passwordLabel">Password</span><span class="required-star">*</span></label>
+          <input class="input" id="login-password" type="password" placeholder="Password" style="margin-bottom:4px;" />
+          <div class="error-text" id="login-password-error" data-i18n="passwordRequired"></div>
+
+          <div style="height:16px;"></div>
+
+          <div class="checkbox-row" style="margin:0 0 12px;">
+            <input id="remember-me" type="checkbox" />
+            <label for="remember-me" class="tiny" data-i18n="rememberMe">Keep me logged in</label>
+          </div>
+
+          <div class="checkbox-row" style="margin:0;">
+            <input id="auth-consent" type="checkbox" />
+            <label for="auth-consent" class="tiny"><span data-i18n="authConsent"></span><span class="required-star">*</span></label>
+          </div>
+          <div class="error-text" id="auth-consent-error" data-i18n="consentRequiredError"></div>
+
+          <div style="height:20px;"></div>
+
+          <button class="btn" onclick="signIn()" type="button" data-i18n="signIn">Sign in</button>
+
+          <div class="link-row" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+            <button class="text-link" onclick="goToScreen('screen-register')" type="button" data-i18n="registerNew">Register as a new user</button>
+            <button class="text-link" onclick="goToScreen('screen-forgot')" type="button" data-i18n="forgotPassword">Forgot password?</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SCREEN: Home ── -->
+      <section class="screen" id="screen-home">
+        <div class="toolbar">
+          <div style="text-align:start;flex:1;">
+            <p class="toolbar-title" data-i18n="dashboardTitle">Dashboard</p>
+            <p class="toolbar-sub" id="home-greeting"></p>
+          </div>
+          <button class="btn small ghost" onclick="goToScreen('screen-settings')" type="button" aria-label="Settings">
+            <svg class="inline-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-.4-1.1 1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H2.8a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.1-.4 1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V2.8a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 .4 1.1 1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.26.3.47.64.6 1 .08.27.11.55.1.83 0 .28-.02.56-.1.83-.13.36-.34.7-.6 1Z"/></svg>
+          </button>
+        </div>
+
+        <div class="hero-card">
+          <div class="hero-meta">
+            <div>
+              <div class="hero-kicker">Recognify</div>
+              <div class="hero-title" data-i18n="homeHeroTitle">Recognize people faster, with less friction.</div>
+              <div class="hero-copy" data-i18n="homeHeroCopy">Your recent matches, saved people, and scanning tools live here.</div>
+            </div>
+            <div class="pill" id="home-profile-count"></div>
+          </div>
+          <div class="hero-stats">
+            <div class="stat-chip"><span class="muted tiny" data-i18n="savedPeopleLabel">Saved people</span><strong id="home-stat-profiles">0</strong></div>
+            <div class="stat-chip"><span class="muted tiny" data-i18n="recognitionsLabel">Recognitions</span><strong id="home-stat-recognitions">0</strong></div>
+            <div class="stat-chip"><span class="muted tiny" data-i18n="modeLabel">Mode</span><strong id="home-stat-mode">Modern</strong></div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <button class="btn" onclick="goToScreen('screen-camera')" type="button" data-i18n="openRecognition">Open recognition</button>
+          <button class="btn secondary" onclick="openAddPerson()" type="button" data-i18n="addNewProfile">Add someone</button>
+        </div>
+
+        <div class="card">
+          <div class="title-row">
+            <div>
+              <div class="section-label" data-i18n="recentHistoryLabel">Recent history</div>
+              <h3 style="margin-bottom:6px;" data-i18n="lastRecognizedTitle">Last recognized faces</h3>
+              <p class="muted tiny" data-i18n="lastRecognizedCopy">The latest three matches appear here as quick ID cards.</p>
+            </div>
+            <button class="text-link" onclick="goToScreen('screen-people')" type="button" data-i18n="allPeople">All people</button>
+          </div>
+          <div class="history-list" id="home-recent-list"></div>
+        </div>
+
+        <div class="card warning">
+          <h3 data-i18n="consentReminder">Consent reminder</h3>
+          <p class="tiny" data-i18n="consentReminderCopy"></p>
+        </div>
+      </section>
+
+      <!-- ── SCREEN: People ── -->
+      <section class="screen" id="screen-people">
+        <div class="toolbar">
+          <div style="text-align:start;flex:1;">
+            <p class="toolbar-title" data-i18n="savedPeopleTitle">Saved people</p>
+            <p class="toolbar-sub" data-i18n="savedPeopleCopy">Professional ID-style cards for every saved profile.</p>
+          </div>
+          <button class="btn small" onclick="openAddPerson()" type="button">＋</button>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <button class="btn small ghost" id="edit-toggle" onclick="toggleEditMode()" type="button" style="width:100%;" data-i18n="edit">Edit</button>
+        </div>
+
+        <div class="id-card-list" id="people-list"></div>
+
+        <div class="card hidden" id="bulk-actions">
+          <div class="actions">
+            <button class="btn secondary" onclick="cancelEditMode()" type="button" data-i18n="cancel">Cancel</button>
+            <button class="btn danger" onclick="deleteSelectedProfiles()" type="button" data-i18n="deleteSelected">Delete Selected</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SCREEN: Profile ── -->
+      <section class="screen" id="screen-profile">
+        <div class="toolbar">
+          <button class="btn small ghost" onclick="goToScreen('screen-home')" type="button" data-i18n="back">Back</button>
+          <div style="text-align:center;flex:1;">
+            <p class="toolbar-title" data-i18n="profileCard">Profile Card</p>
+            <p class="toolbar-sub" data-i18n="profileCardSub"></p>
+          </div>
+          <button class="btn small" onclick="toggleProfileEdit()" type="button" id="profile-edit-btn" data-i18n="edit">Edit</button>
+        </div>
+
+        <div class="card">
+          <div class="profile-hero">
+            <div class="avatar" id="profile-avatar"></div>
+            <div>
+              <h3 id="profile-name" style="margin-bottom:6px;"></h3>
+              <p class="muted" id="profile-relationship"></p>
+            </div>
+          </div>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <label data-i18n="relationship">Relationship</label>
+              <div id="profile-relationship-view"></div>
+              <input class="input hidden" id="profile-relationship-input" />
+            </div>
+            <div class="detail-item">
+              <label data-i18n="notes">Notes</label>
+              <div id="profile-notes-view"></div>
+              <textarea class="textarea hidden" id="profile-notes-input"></textarea>
+            </div>
+            <div class="detail-item">
+              <label data-i18n="lastInteraction">Last interaction</label>
+              <div id="profile-last-view"></div>
+              <input class="input hidden" id="profile-last-input" />
+            </div>
+            <div class="detail-item">
+              <label data-i18n="recognitionCounterLabel">Recognition counter</label>
+              <div id="profile-recognition-count-view"></div>
+              <p class="tiny muted" style="margin-top:8px;" data-i18n="recognitionCounterHelp">Updated automatically by the system. Multiple recognitions within 24 hours count as one interaction.</p>
+            </div>
+          </div>
+          <div class="actions" style="margin-top:16px;">
+            <button class="btn secondary hidden" id="profile-cancel-btn" onclick="cancelProfileEdit()" type="button" data-i18n="cancel">Cancel</button>
+            <button class="btn hidden" id="profile-save-btn" onclick="saveProfileChanges()" type="button" data-i18n="saveChanges">Save Changes</button>
+          </div>
+        </div>
+
+        <div class="card danger-box">
+          <h4 data-i18n="userRights">User rights and responsibility</h4>
+          <p class="tiny" data-i18n="userRightsCopy"></p>
+          <button class="btn danger" onclick="deleteCurrentProfile()" type="button" data-i18n="deleteProfile">Delete Profile</button>
+        </div>
+      </section>
+
+      <!-- ── SCREEN: Add Person ── -->
+      <section class="screen" id="screen-add">
+        <div class="toolbar">
+          <button class="btn small ghost" onclick="goToScreen('screen-home')" type="button" data-i18n="back">Back</button>
+          <div style="text-align:center;flex:1;">
+            <p class="toolbar-title" data-i18n="addPerson">Add Person</p>
+            <p class="toolbar-sub" data-i18n="addPersonSub"></p>
+          </div>
+          <div style="width:72px;"></div>
+        </div>
+
+        <div class="card warning">
+          <h3 data-i18n="consentRequired">Consent required</h3>
+          <p class="tiny" data-i18n="consentRequiredCopy"></p>
+        </div>
+
+        <div class="card">
+          <label class="field-label" for="new-photo"><span data-i18n="photo">Photo</span><span class="required-star">*</span></label>
+          <input class="input" id="new-photo" type="file" accept="image/*" />
+          <div class="error-text" id="new-photo-error" data-i18n="photoRequired"></div>
+
+          <label class="field-label" for="new-name"><span data-i18n="fullNameLabel">Full name</span><span class="required-star">*</span></label>
+          <input class="input" id="new-name" type="text" placeholder="Full name" />
+          <div class="error-text" id="new-name-error" data-i18n="nameRequired"></div>
+
+          <label class="field-label" for="new-relationship"><span data-i18n="relationship">Relationship</span><span class="required-star">*</span></label>
+          <input class="input" id="new-relationship" type="text" placeholder="Relationship" />
+          <div class="error-text" id="new-relationship-error" data-i18n="relationshipRequired"></div>
+
+          <label class="field-label" for="new-last"><span data-i18n="lastInteraction">Last interaction</span></label>
+          <input class="input" id="new-last" type="text" placeholder="Last interaction" />
+
+          <label class="field-label" for="new-notes"><span data-i18n="notes">Notes</span></label>
+          <textarea class="textarea" id="new-notes" placeholder="Notes"></textarea>
+
+          <div class="checkbox-row">
+            <input id="new-consent" type="checkbox" />
+            <label for="new-consent" class="tiny"><span data-i18n="newConsent"></span><span class="required-star">*</span></label>
+          </div>
+          <div class="error-text" id="new-consent-error" data-i18n="consentRequiredError"></div>
+
+          <div class="actions">
+            <button class="btn secondary" onclick="goToScreen('screen-people')" type="button" data-i18n="cancel">Cancel</button>
+            <button class="btn" onclick="saveNewPerson()" type="button" data-i18n="saveProfile">Save Profile</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SCREEN: Camera ── -->
+      <section class="screen" id="screen-camera">
+        <div class="toolbar">
+          <div style="text-align:start;flex:1;">
+            <p class="toolbar-title" data-i18n="cameraMainTitle">Face recognition</p>
+            <p class="toolbar-sub" data-i18n="cameraMainCopy">A cleaner, camera-first view for the main task.</p>
+          </div>
+          <button class="btn small ghost" onclick="goToScreen('screen-home')" type="button" data-i18n="homeShortcut">Home</button>
+        </div>
+
+        <div class="camera-page">
+          <div class="camera-stage">
+            <div class="camera-topbar">
+              <div class="camera-chip" data-i18n="liveLabel">Recognify Live</div>
+              <button class="camera-chip" onclick="toggleGlassesConnection()" type="button" id="glasses-btn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span data-i18n="connectMeta">Connect Glasses</span>
+              </button>
+            </div>
+
+            <div class="camera-guides">
+              <div class="camera-focus"></div>
+            </div>
+            <div class="camera-prompt" data-i18n="cameraPromptFriendly">Center one face inside the frame, then tap scan.</div>
+
+            <div class="camera-sheet" id="floating-card">
+              <div class="camera-sheet-header">
+                <div>
+                  <p class="camera-sheet-name" id="floating-name"></p>
+                  <div class="camera-sheet-meta" id="floating-relation"></div>
+                </div>
+                <div class="id-card-badge" id="floating-count"></div>
+              </div>
+              <div class="camera-sheet-notes" id="floating-notes"></div>
+            </div>
+
+            <div class="camera-dock">
+              <div class="camera-controls">
+                <div>
+                  <button class="camera-side-btn" onclick="toggleVoiceFeedback()" type="button" id="voice-btn">
+                    <svg id="voice-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9H3v6h3l5 4V5z"/><path d="M15 9a4 4 0 0 1 0 6"/><path d="M18 7a7 7 0 0 1 0 10"/></svg>
+                  </button>
+                  <div class="camera-tool-label" data-i18n="voiceShort">Voice</div>
+                </div>
+                <div class="camera-shutter-wrap">
+                  <button class="camera-shutter" onclick="simulateRecognition()" type="button" aria-label="Scan face"></button>
+                  <div class="camera-tool-label" data-i18n="scanFaceShort">Scan face</div>
+                </div>
+                <div>
+                  <button class="camera-side-btn" onclick="openAddPerson()" type="button">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                  </button>
+                  <div class="camera-tool-label" data-i18n="addPersonShort">Add person</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="camera-subtools">
+            <button class="btn secondary" onclick="goToScreen('screen-people')" type="button" data-i18n="openSavedPeople">Open saved people</button>
+            <button class="btn ghost" onclick="captureFaceFromStream()" id="capture-face-section" type="button" data-i18n="captureFromStream">Capture from stream</button>
+          </div>
+
+          <div class="card" style="margin-top:0;background:var(--card-bg);">
+            <p class="tiny" data-i18n="cameraNoticeCopy"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SCREEN: Settings ── -->
+      <section class="screen" id="screen-settings">
+        <div class="toolbar">
+          <button class="btn small ghost" onclick="goToScreen('screen-home')" type="button" data-i18n="back">Back</button>
+          <div style="text-align:center;flex:1;">
+            <p class="toolbar-title" data-i18n="settings">Settings</p>
+            <p class="toolbar-sub" data-i18n="settingsSub"></p>
+          </div>
+          <div style="width:72px;"></div>
+        </div>
+
+        <!-- Appearance -->
+        <div class="card">
+          <h3 style="margin-bottom:14px;" data-i18n="appearance">Appearance</h3>
+
+          <!-- Theme toggle -->
+          <div class="setting-row">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="setting-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="theme-icon">
+                  <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+              </div>
+              <div>
+                <strong data-i18n="themeLabel">Theme</strong>
+                <div class="tiny muted" id="theme-sub-text" data-i18n="themeDark">Dark mode</div>
+              </div>
+            </div>
+            <div class="segmented" id="theme-control">
+              <button onclick="setTheme('dark')" type="button" class="active">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                <span data-i18n="dark">Dark</span>
+              </button>
+              <button onclick="setTheme('light')" type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                <span data-i18n="light">Light</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Text size -->
+          <div class="setting-row">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="setting-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="textSize">Text size</strong>
+                <div class="tiny muted" data-i18n="textSizeSub"></div>
+              </div>
+            </div>
+            <div class="segmented" id="size-control">
+              <button onclick="setTextScale(0.95)" type="button">A-</button>
+              <button class="active" onclick="setTextScale(1)" type="button">A</button>
+              <button onclick="setTextScale(1.15)" type="button">A+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accessibility -->
+        <div class="card">
+          <h3 style="margin-bottom:14px;" data-i18n="accessibility">Accessibility</h3>
+
+          <!-- Voice feedback -->
+          <div class="setting-row" style="border-bottom:none;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="setting-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9H3v6h3l5 4V5z"/><path d="M15 9a4 4 0 0 1 0 6"/><path d="M18 7a7 7 0 0 1 0 10"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="voiceFeedback">Voice feedback</strong>
+                <div class="tiny muted" data-i18n="voiceFeedbackSub"></div>
+              </div>
+            </div>
+            <button class="icon-toggle-btn" onclick="toggleVoiceFeedback()" type="button" id="voice-btn-settings">
+              <svg id="voice-toggle-icon" width="28" height="16" viewBox="0 0 44 24" fill="none">
+                <rect width="44" height="24" rx="12" fill="#3a3a3c"/>
+                <circle id="voice-toggle-knob" cx="12" cy="12" r="10" fill="white"/>
+              </svg>
+              <span class="tiny muted" id="voice-toggle-label" data-i18n="off">Off</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Language -->
+        <div class="card">
+          <h3 style="margin-bottom:14px;" data-i18n="language">Language</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button class="lang-choice-btn" id="lang-en-btn" onclick="setLanguage('en');updateLangButtons()" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span>English</span>
+            </button>
+            <button class="lang-choice-btn" id="lang-ar-btn" onclick="setLanguage('ar');updateLangButtons()" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span>العربية</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Privacy -->
+        <div class="card">
+          <h3 style="margin-bottom:14px;" data-i18n="privacyTitle">Privacy</h3>
+          <div class="setting-row">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="setting-icon-wrap" style="background:rgba(255,59,48,0.12);color:var(--danger);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="deleteAllData">Delete all saved data</strong>
+                <div class="tiny muted" data-i18n="deleteAllDataSub"></div>
+              </div>
+            </div>
+            <button class="btn small danger" onclick="deleteAllProfiles()" type="button" data-i18n="deleteAll">Delete All</button>
+          </div>
+          <div class="setting-row">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="setting-icon-wrap" style="background:rgba(52,199,89,0.12);color:#34c759;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="responsibleUse">Responsible use</strong>
+                <div class="tiny muted" data-i18n="responsibleUseSub"></div>
+              </div>
+            </div>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div class="setting-row" style="border-bottom:none;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="setting-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              </div>
+              <div>
+                <strong data-i18n="signOut">Sign out</strong>
+                <div class="tiny muted" data-i18n="signOutSub"></div>
+              </div>
+            </div>
+            <button class="btn small secondary" onclick="signOut()" type="button" data-i18n="signOut">Sign out</button>
+          </div>
+        </div>
+
+        <div class="card warning">
+          <h3 data-i18n="howSystemWorks">How the system works</h3>
+          <p class="tiny" data-i18n="howSystemWorksCopy"></p>
+        </div>
+      </section>
+
+      <!-- ── SCREEN: Register ── -->
+      <section class="screen" id="screen-register">
+        <div class="toolbar">
+          <button class="btn small ghost" onclick="goToScreen('screen-auth')" type="button" data-i18n="back">Back</button>
+          <div style="text-align:center;flex:1;">
+            <p class="toolbar-title" data-i18n="registerNew">Register</p>
+            <p class="toolbar-sub" data-i18n="registerSub"></p>
+          </div>
+          <div style="width:72px;"></div>
+        </div>
+        <div class="card">
+          <label class="field-label" for="register-name"><span data-i18n="fullNameLabel">Full name</span><span class="required-star">*</span></label>
+          <input class="input" id="register-name" placeholder="Full name" />
+          <div class="error-text" id="register-name-error" data-i18n="nameRequired"></div>
+
+          <label class="field-label" for="register-email"><span data-i18n="emailLabel">Email</span><span class="required-star">*</span></label>
+          <input class="input" id="register-email" placeholder="Email" type="email" />
+          <div class="error-text" id="register-email-error" data-i18n="emailRequired"></div>
+
+          <label class="field-label" for="register-password"><span data-i18n="passwordLabel">Password</span><span class="required-star">*</span></label>
+          <input class="input" id="register-password" placeholder="Password" type="password" />
+          <div class="error-text" id="register-password-error" data-i18n="passwordRequired"></div>
+
+          <div class="checkbox-row">
+            <input id="register-agree" type="checkbox" />
+            <label for="register-agree" class="tiny"><span data-i18n="registerAgree"></span><span class="required-star">*</span></label>
+          </div>
+          <div class="error-text" id="register-agree-error" data-i18n="agreeRequired"></div>
+
+          <div class="actions">
+            <button class="btn secondary" onclick="goToScreen('screen-auth')" type="button" data-i18n="cancel">Cancel</button>
+            <button class="btn" onclick="completeRegister()" type="button" data-i18n="createAccount">Create Account</button>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ── SCREEN: Layout Choice ── -->
+      <section class="screen" id="screen-layout-choice">
+        <div class="toolbar">
+          <button class="btn small ghost" onclick="goToScreen('screen-register')" type="button" data-i18n="back">Back</button>
+          <div style="text-align:center;flex:1;">
+            <p class="toolbar-title" data-i18n="layoutChoiceTitle">Choose your layout</p>
+            <p class="toolbar-sub" data-i18n="layoutChoiceSub">Pick the experience that feels best for you</p>
+          </div>
+          <div style="width:72px;"></div>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:8px;" data-i18n="layoutChoiceHeading">How would you like the app to look?</h3>
+          <p class="muted tiny" style="margin-bottom:18px;" data-i18n="layoutChoiceBody">This is only asked when you create an account. You can keep the modern layout or choose a simpler one with clearer guidance.</p>
+          <div class="layout-choice-grid">
+            <button class="layout-option" onclick="chooseLayoutMode('default')" type="button">
+              <h3 data-i18n="layoutModernTitle">Modern layout</h3>
+              <p class="tiny muted" data-i18n="layoutModernCopy">Neat, clean, and familiar with a polished everyday app feel.</p>
+              <div class="layout-preview modern" aria-hidden="true">
+                <div class="preview-bar"></div>
+                <div class="preview-chip-row"><div class="preview-chip"></div><div class="preview-chip"></div></div>
+                <div class="preview-line"></div>
+                <div class="preview-line" style="width:78%;"></div>
+              </div>
+            </button>
+            <button class="layout-option" onclick="chooseLayoutMode('accessible')" type="button">
+              <h3 data-i18n="layoutAccessibleTitle">Simple & clear layout</h3>
+              <p class="tiny muted" data-i18n="layoutAccessibleCopy">Made for elderly users or vision support with larger text, simpler screens, and clearer buttons.</p>
+              <div class="layout-preview simple" aria-hidden="true">
+                <div class="preview-bar"></div>
+                <div class="preview-chip"></div>
+                <div class="preview-chip"></div>
+                <div class="preview-line" style="width:88%;"></div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SCREEN: Forgot Password ── -->
+      <section class="screen" id="screen-forgot">
+        <div class="toolbar">
+          <button class="btn small ghost" onclick="goToScreen('screen-auth')" type="button" data-i18n="back">Back</button>
+          <div style="text-align:center;flex:1;">
+            <p class="toolbar-title" data-i18n="forgotPassword">Forgot password?</p>
+            <p class="toolbar-sub" data-i18n="forgotSub"></p>
+          </div>
+          <div style="width:72px;"></div>
+        </div>
+        <div class="card">
+          <label class="field-label" for="forgot-email"><span data-i18n="emailLabel">Email</span><span class="required-star">*</span></label>
+          <input class="input" id="forgot-email" placeholder="Email" type="email" />
+          <div class="error-text" id="forgot-email-error" data-i18n="emailRequired"></div>
+          <button class="btn" onclick="completeForgot()" type="button" data-i18n="sendResetLink">Send Reset Link</button>
+        </div>
+      </section>
+
+      <!-- Bottom nav -->
+      <nav class="bottom-nav hidden" id="bottom-nav">
+        <button class="nav-btn" onclick="navigateToScreen('screen-home')" type="button" aria-label="Home">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+          <span data-i18n="home">Home</span>
+        </button>
+        <button class="nav-btn active" onclick="navigateToScreen('screen-people')" type="button" aria-label="People">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="3.5"/><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M14.5 3.13a3.5 3.5 0 0 1 0 6.74"/></svg>
+          <span data-i18n="people">People</span>
+        </button>
+        <button class="nav-btn" onclick="navigateToScreen('screen-camera')" type="button" aria-label="Camera">
+          <svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 7h3l2-2h6l2 2h3a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span data-i18n="camera">Camera</span>
+        </button>
+        <button class="nav-btn" onclick="navigateToScreen('screen-settings')" type="button" aria-label="Settings">
+          <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-.4-1.1 1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H2.8a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.1-.4 1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V2.8a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 .4 1.1 1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9c.26.3.47.64.6 1 .08.27.11.55.1.83 0 .28-.02.56-.1.83-.13.36-.34.7-.6 1Z"/></svg>
+          <span data-i18n="settings">Settings</span>
+        </button>
+      </nav>
+    </div>
+
+    <div class="home-indicator"></div>
+  </div>
+
+  <script>
+    const T = {
+      en: {
+        appName:'Recognify', welcomeHeading:'Welcome back', brandTagline:'Recognify brings clarity and ease to everyday social moments.', authSubtitle:'Helping you recognize people around you',
+        consentTitle:'Before you continue', consentNotice:'This app stores face-related information. Only use it with clear consent, and make sure the person understands how their photo and details will be used before saving anything.',
+        signIn:'Sign in to your account', rememberMe:'Keep me logged in', authConsent:'I understand that consent is required before storing another person\'s biometric data or personal information.',
+        registerNew:'Register as a new user', forgotPassword:'Forgot password?',
+        homeTitle:'Home', homeSub:'Quick actions, recent profiles, and recognition tools', welcomeBack:'Welcome back', homeGreeting:'Your saved people and recognition tools are ready.', dashboardTitle:'Dashboard', homeHeroTitle:'Recognize people faster, with less friction.', homeHeroCopy:'Your recent matches, saved people, and scanning tools live here.', savedPeopleLabel:'Saved people', recognitionsLabel:'Recognitions', modeLabel:'Mode', modeModern:'Modern', modeSimple:'Simple', openRecognition:'Open recognition', recentHistoryLabel:'Recent history', lastRecognizedTitle:'Last recognized faces', lastRecognizedCopy:'The latest three matches appear here as quick ID cards.', allPeople:'All people', savedPeopleTitle:'Saved people', savedPeopleCopy:'Professional ID-style cards for every saved profile.', cameraMainTitle:'Face recognition', cameraMainCopy:'A cleaner, camera-first view for the main task.', homeShortcut:'Home', liveLabel:'Recognify Live', cameraPromptFriendly:'Center one face inside the frame, then tap scan.', voiceShort:'Voice', scanFaceShort:'Scan face', addPersonShort:'Add person', openSavedPeople:'Open saved people', captureFromStream:'Capture from stream', captureFromGlasses:'Capture from connected glasses', privacyTitle:'Privacy', recognitionCounterLabel:'Recognition counter', recognitionCounterHelp:'Updated automatically by the system. Multiple recognitions within 24 hours count as one interaction.', interactionCountLabel:'Interactions',
+        startScan:'Scan a face', addNewProfile:'Add someone', todayOverview:'Today overview', recentProfiles:'Recent profiles', recentProfilesSub:'Tap a card to view the full profile', viewAll:'View all',
+        consentReminder:'Consent reminder', consentReminderCopy:'Only save or display a person\'s face and notes when they have clearly agreed to it.',
+        people:'People', peopleSub:'Saved profiles and biometric cards', howListWorks:'Tap any person to open their profile card. Use Edit to select items for removal or modification.',
+        edit:'Edit', cancel:'Cancel', deleteSelected:'Delete Selected', done:'Done',
+        back:'Back', profileCard:'Profile Card', profileCardSub:'Review, edit, or remove saved information',
+        relationship:'Relationship', notes:'Notes', lastInteraction:'Last interaction',
+        userRights:'User rights and responsibility', userRightsCopy:'You must have consent before storing or editing personal data. The user can update or delete saved information at any time. Do not rely on this system alone for identification.',
+        deleteProfile:'Delete Profile', addPerson:'Add Person', addPersonSub:'Create a profile card for a saved face',
+        consentRequired:'Consent required', consentRequiredCopy:'Only add a person if they have agreed to have their image and notes stored in this prototype.',
+        photo:'Photo', newConsent:'I confirm that I have this person\'s consent to store their image and information.', saveProfile:'Save Profile',
+        camera:'Camera', cameraSub:'Live recognition assistance', connectMeta:'Connect Smart Glasses', glassesConnected:'Smart Glasses Connected',
+        cameraHint:'Point camera at a face', scanFace:'Scan', readAloudLabel:'Read aloud', cameraNoticeCopy:'Recognition is assistive only. Always confirm identity through interaction.',
+        settings:'Settings', settingsSub:'Accessibility, language, privacy, and controls', accessibility:'Accessibility',
+        textSize:'Text size', textSizeSub:'Adjust readability for seniors and low vision',
+        voiceFeedback:'Voice feedback', voiceFeedbackSub:'Read detected profile details aloud', off:'Off', on:'On',
+        appearance:'Appearance', themeLabel:'Theme', themeDark:'Dark mode', themeLight:'Light mode', dark:'Dark', light:'Light',
+        captureFace:'Capture Face to Profile',
+        language:'Language', privacyControl:'Privacy and data control',
+        deleteAllData:'Delete all saved data', deleteAllDataSub:'Remove all saved profiles, notes, and images from this prototype', deleteAll:'Delete All',
+        responsibleUse:'Responsible use', responsibleUseSub:'Consent is required before capture, storage, or display of personal information',
+        signOut:'Sign out', signOutSub:'Return to the login screen',
+        howSystemWorks:'How the system works', howSystemWorksCopy:'<ol style="margin:0;padding-inline-start:18px;"><li>Add a person with their consent.</li><li>Save helpful notes for recognition.</li><li>Open the camera or connect smart glasses.</li><li>When a familiar face is detected, the profile card appears.</li></ol>',
+        registerSub:'Create your account to get started', registerAgree:'I agree to responsible use, consent requirements, and privacy warnings.', layoutChoiceTitle:'Choose your layout', layoutChoiceSub:'Pick the experience that feels best for you', layoutChoiceHeading:'How would you like the app to look?', layoutChoiceBody:'This is only asked when you create an account. You can keep the modern layout or choose a simpler one with clearer guidance.', layoutModernTitle:'Modern layout', layoutModernCopy:'Neat, clean, and familiar with a polished everyday app feel.', layoutAccessibleTitle:'Simple & clear layout', layoutAccessibleCopy:'Made for elderly users or vision support with larger text, simpler screens, and clearer buttons.',
+        createAccount:'Create Account', forgotSub:'Reset access to your prototype account', sendResetLink:'Send Reset Link',
+        saveChanges:'Save Changes', home:'Home',
+        emailLabel:'Email', passwordLabel:'Password', fullNameLabel:'Full name',
+        emailRequired:'Please enter a valid email address.', passwordRequired:'Password must be at least 8 characters long.',
+        nameRequired:'Please enter your full name.', relationshipRequired:'Please enter the relationship.',
+        photoRequired:'Please upload a photo.', consentRequiredError:'You must confirm this notice before continuing.',
+        agreeRequired:'You must agree before continuing.', close:'Close', noData:'No data', noNotes:'No notes'
+      },
+      ar: {
+        appName:'Recognify', welcomeHeading:'مرحبًا بعودتك', brandTagline:'يسهّل عليك Recognify التعرّف على الأشخاص والتفاعل بثقة في حياتك اليومية.', authSubtitle:'لمساعدتك على التعرّف على الأشخاص من حولك بسهولة',
+        consentTitle:'قبل المتابعة', consentNotice:'يحفظ هذا التطبيق معلومات مرتبطة بالوجوه. استخدمه فقط بعد الحصول على موافقة واضحة، وتأكد من أن الشخص يعرف كيف ستُستخدم صورته وبياناته قبل حفظ أي شيء.',
+        signIn:'تسجيل الدخول إلى حسابك', rememberMe:'إبقائي مسجلاً للدخول', authConsent:'أدرك أن الحصول على الموافقة شرط أساسي قبل حفظ البيانات البيومترية أو المعلومات الشخصية لشخص آخر.',
+        registerNew:'تسجيل مستخدم جديد', forgotPassword:'نسيت كلمة المرور؟',
+        homeTitle:'الرئيسية', homeSub:'إجراءات سريعة وملفات حديثة وأدوات التعرّف', welcomeBack:'مرحبًا بعودتك', homeGreeting:'ملفات الأشخاص المحفوظة وأدوات التعرّف جاهزة.', dashboardTitle:'لوحة التحكم', homeHeroTitle:'تعرّف على الأشخاص بسرعة أكبر وبأقل مجهود.', homeHeroCopy:'هنا ستجد آخر عمليات التعرّف والأشخاص المحفوظين وأدوات المسح.', savedPeopleLabel:'الأشخاص المحفوظون', recognitionsLabel:'عمليات التعرّف', modeLabel:'الوضع', modeModern:'عصري', modeSimple:'واضح', openRecognition:'فتح التعرّف', recentHistoryLabel:'السجل الحديث', lastRecognizedTitle:'آخر الوجوه التي تم التعرّف عليها', lastRecognizedCopy:'تظهر هنا آخر ثلاث نتائج على شكل بطاقات تعريف سريعة.', allPeople:'كل الأشخاص', savedPeopleTitle:'الأشخاص المحفوظون', savedPeopleCopy:'بطاقات تعريف احترافية لكل ملف محفوظ.', cameraMainTitle:'التعرّف على الوجه', cameraMainCopy:'واجهة أنظف تركّز على الكاميرا للمهمة الأساسية.', homeShortcut:'الرئيسية', liveLabel:'التعرّف المباشر', cameraPromptFriendly:'ضع وجهًا واحدًا داخل الإطار ثم اضغط على المسح.', voiceShort:'الصوت', scanFaceShort:'مسح الوجه', addPersonShort:'إضافة شخص', openSavedPeople:'فتح الأشخاص المحفوظين', captureFromStream:'التقاط من البث', captureFromGlasses:'التقاط من النظارات المتصلة', privacyTitle:'الخصوصية', recognitionCounterLabel:'عداد التعرّف', recognitionCounterHelp:'يتم تحديثه تلقائيًا بواسطة النظام. أي عمليات تعرّف متعددة خلال 24 ساعة تُحسب كتفاعل واحد.', interactionCountLabel:'مرات التفاعل',
+        startScan:'مسح وجه', addNewProfile:'إضافة شخص', todayOverview:'نظرة عامة اليوم', recentProfiles:'الملفات الحديثة', recentProfilesSub:'اضغط على البطاقة لعرض الملف الكامل', viewAll:'عرض الكل',
+        consentReminder:'تذكير بالموافقة', consentReminderCopy:'احفظ أو اعرض وجه الشخص وملاحظاته فقط عندما يمنح موافقة واضحة.',
+        people:'الأشخاص', peopleSub:'الملفات المحفوظة وبطاقات البيانات الحيوية', howListWorks:'اضغط على أي شخص لفتح بطاقته الشخصية. استخدم وضع التعديل لتحديد العناصر بغرض حذفها أو تعديلها.',
+        edit:'تعديل', cancel:'إلغاء', deleteSelected:'حذف المحدد', done:'إنهاء',
+        back:'رجوع', profileCard:'البطاقة الشخصية', profileCardSub:'مراجعة المعلومات أو تعديلها أو حذفها',
+        relationship:'العلاقة', notes:'ملاحظات', lastInteraction:'آخر تفاعل',
+        userRights:'حقوق المستخدم والمسؤولية', userRightsCopy:'يجب الحصول على الموافقة قبل حفظ البيانات الشخصية أو تعديلها. ويمكن للمستخدم تحديث المعلومات أو حذفها في أي وقت. لا ينبغي الاعتماد على هذا النظام وحده لتحديد الهوية.',
+        deleteProfile:'حذف الملف', addPerson:'إضافة شخص', addPersonSub:'إنشاء بطاقة تعريف لوجه محفوظ',
+        consentRequired:'الموافقة مطلوبة', consentRequiredCopy:'لا تقم بإضافة أي شخص إلا بعد موافقته على حفظ صورته ومعلوماته في هذا النموذج الأولي.',
+        photo:'الصورة', newConsent:'أؤكد أن لدي موافقة هذا الشخص على حفظ صورته ومعلوماته.', saveProfile:'حفظ الملف',
+        camera:'الكاميرا', cameraSub:'مساعدة فورية في التعرّف', connectMeta:'ربط النظارات الذكية', glassesConnected:'تم ربط النظارات الذكية',
+        cameraHint:'وجّه الكاميرا نحو الوجه', scanFace:'مسح', readAloudLabel:'القراءة بصوت عالٍ', cameraNoticeCopy:'هذه الميزة مساعدة فقط، ويجب دائمًا تأكيد الهوية من خلال التفاعل المباشر.',
+        settings:'الإعدادات', settingsSub:'إمكانية الوصول واللغة والخصوصية والتحكم', accessibility:'إمكانية الوصول',
+        textSize:'حجم النص', textSizeSub:'تحسين القراءة لكبار السن وضعاف البصر',
+        voiceFeedback:'القراءة بصوت عالٍ', voiceFeedbackSub:'قراءة معلومات الشخص المتعرّف عليه بصوت عالٍ', off:'متوقف', on:'يعمل',
+        appearance:'المظهر', themeLabel:'النمط', themeDark:'الوضع الداكن', themeLight:'الوضع الفاتح', dark:'داكن', light:'فاتح',
+        captureFace:'التقاط وجه للملف الشخصي',
+        language:'اللغة', privacyControl:'الخصوصية والتحكم بالبيانات',
+        deleteAllData:'حذف جميع البيانات المحفوظة', deleteAllDataSub:'إزالة جميع الملفات والملاحظات والصور من هذا النموذج الأولي', deleteAll:'حذف الكل',
+        responsibleUse:'الاستخدام المسؤول', responsibleUseSub:'الموافقة مطلوبة قبل الالتقاط أو الحفظ أو عرض المعلومات الشخصية',
+        signOut:'تسجيل الخروج', signOutSub:'العودة إلى شاشة تسجيل الدخول',
+        howSystemWorks:'كيف يعمل النظام', howSystemWorksCopy:'<ol style="margin:0;padding-inline-start:18px;"><li>أضِف الشخص بعد موافقته.</li><li>دوّن ملاحظات مفيدة للتعرّف عليه.</li><li>افتح الكاميرا أو اربط النظارات الذكية.</li><li>عند اكتشاف وجه مألوف، تظهر البطاقة.</li></ol>',
+        registerSub:'أنشئ حسابك للبدء', registerAgree:'لقد قرأت وأوافق على سياسة الخصوصية واتفاقية المستخدم وشروط الاستخدام.', layoutChoiceTitle:'اختر شكل الواجهة', layoutChoiceSub:'اختر التجربة التي تناسبك أكثر', layoutChoiceHeading:'كيف تفضّل أن يبدو التطبيق؟', layoutChoiceBody:'سيُطلب منك هذا مرة واحدة فقط عند إنشاء الحساب. يمكنك اختيار الواجهة الحديثة أو واجهة أبسط بتوجيه أوضح.', layoutModernTitle:'واجهة حديثة', layoutModernCopy:'مرتبة ونظيفة ومألوفة بتجربة قريبة من التطبيقات اليومية.', layoutAccessibleTitle:'واجهة بسيطة وواضحة', layoutAccessibleCopy:'مناسبة لكبار السن أو لدعم ضعف البصر مع نص أكبر وأزرار أوضح وشاشات أبسط.',
+        createAccount:'إنشاء حساب', forgotSub:'استعادة الوصول إلى حساب النموذج الأولي', sendResetLink:'إرسال رابط إعادة التعيين',
+        saveChanges:'حفظ التغييرات', home:'الرئيسية',
+        emailLabel:'البريد الإلكتروني', passwordLabel:'كلمة المرور', fullNameLabel:'الاسم الكامل',
+        emailRequired:'يرجى إدخال بريد إلكتروني صحيح.', passwordRequired:'يجب أن تتكون كلمة المرور من 8 أحرف على الأقل.',
+        nameRequired:'يرجى إدخال الاسم الكامل.', relationshipRequired:'يرجى إدخال العلاقة.',
+        photoRequired:'يرجى رفع صورة.', consentRequiredError:'يجب تأكيد هذا التنبيه قبل المتابعة.',
+        agreeRequired:'يجب الموافقة قبل المتابعة.', close:'إغلاق', noData:'لا توجد بيانات', noNotes:'لا توجد ملاحظات'
+      }
+    };
+
+    const state = {
+      lang: 'en', voice: false, glassesConnected: false, theme: 'dark', textScale: 1,
+      editMode: false, currentProfileId: 1,
+      selectedIds: new Set(),
+      userEmail: '', userName: '', uiMode: 'default', recognitionHistory: [],
+      profiles: [
+        { id:1, name:'Dr. Shayma Al Kobaisi', relationship:'Database Systems Instructor', notes:'Usual interaction locations in the CIT building.', lastInteraction:'Database Systems class', image:'', recognitionCount:0, lastRecognitionAt:null },
+        { id:2, name:'Ramla A.', relationship:'CS major, senior project teammate', notes:'Wears colorful abayas. Usual interaction location in the database lectures classroom. Short. Loves music.', lastInteraction:'Senior project meeting', image:'', recognitionCount:0, lastRecognitionAt:null },
+        { id:3, name:'Ahmed Saeed', relationship:'Classmate', notes:'Met in AI class. Prefers short conversations before meetings.', lastInteraction:'Last week at the library', image:'', recognitionCount:0, lastRecognitionAt:null }
+      ]
+    };
+
+    // ── Navigation ──
+    function goToScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      const authScreens = ['screen-auth', 'screen-register', 'screen-forgot', 'screen-layout-choice'];
+      document.getElementById('bottom-nav').classList.toggle('hidden', authScreens.includes(id));
+      const authLike = ['screen-auth', 'screen-register', 'screen-forgot', 'screen-layout-choice'];
+      document.body.classList.toggle('ui-accessible', state.uiMode === 'accessible' && !authLike.includes(id));
+      updateNavActiveStates(id);
+      if (id === 'screen-home') renderHome();
+      if (id === 'screen-people') renderPeople();
+      if (id === 'screen-profile') renderCurrentProfile();
+    }
+
+    function navigateToScreen(id) { goToScreen(id); }
+
+    function updateNavActiveStates(screenId) {
+      const map = { 'screen-home':0, 'screen-people':1, 'screen-profile':1, 'screen-add':1, 'screen-camera':2, 'screen-settings':3 };
+      document.querySelectorAll('.nav-btn').forEach((btn, i) => btn.classList.toggle('active', i === map[screenId]));
+    }
+
+    // ── Validation helpers ──
+    function clearValidation(ids) {
+      ids.forEach(id => {
+        document.getElementById(id)?.classList.remove('invalid');
+        document.getElementById(id + '-error')?.classList.remove('show');
+      });
+    }
+
+    function showFieldError(id) {
+      document.getElementById(id)?.classList.add('invalid');
+      document.getElementById(id + '-error')?.classList.add('show');
+    }
+
+    const isValidEmail = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const isValidPassword = pw => pw.length >= 8;
+
+    // ── Auth ──
+    function signIn() {
+      clearValidation(['login-email', 'login-password', 'auth-consent']);
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      let valid = true;
+      if (!isValidEmail(email)) { showFieldError('login-email'); valid = false; }
+      if (!isValidPassword(password)) { showFieldError('login-password'); valid = false; }
+      if (!document.getElementById('auth-consent').checked) { showFieldError('auth-consent'); valid = false; }
+      if (!valid) return;
+      if (document.getElementById('remember-me').checked) {
+        sessionStorage.setItem('rememberedEmail', email);
+        sessionStorage.setItem('rememberedPassword', password);
+      } else {
+        sessionStorage.removeItem('rememberedEmail');
+        sessionStorage.removeItem('rememberedPassword');
+      }
+      state.userEmail = email;
+      state.userName = email.split('@')[0];
+      applyLayoutMode(localStorage.getItem('recognifyLayoutMode') || 'default');
+      renderHome();
+      goToScreen('screen-home');
+    }
+
+    function completeRegister() {
+      clearValidation(['register-name', 'register-email', 'register-password', 'register-agree']);
+      let valid = true;
+      const name = document.getElementById('register-name').value.trim();
+      const email = document.getElementById('register-email').value.trim();
+      const password = document.getElementById('register-password').value;
+      if (!name) { showFieldError('register-name'); valid = false; }
+      if (!isValidEmail(email)) { showFieldError('register-email'); valid = false; }
+      if (!isValidPassword(password)) { showFieldError('register-password'); valid = false; }
+      if (!document.getElementById('register-agree').checked) { showFieldError('register-agree'); valid = false; }
+      if (!valid) return;
+      state.userName = name;
+      state.userEmail = email;
+      sessionStorage.setItem('rememberedEmail', email);
+      sessionStorage.setItem('rememberedPassword', password);
+      document.getElementById('login-email').value = email;
+      document.getElementById('login-password').value = password;
+      document.getElementById('remember-me').checked = true;
+      goToScreen('screen-layout-choice');
+    }
+
+    function applyLayoutMode(mode = 'default') {
+      state.uiMode = mode;
+      localStorage.setItem('recognifyLayoutMode', mode);
+      const activeScreen = document.querySelector('.screen.active')?.id;
+      const authLike = ['screen-auth', 'screen-register', 'screen-forgot', 'screen-layout-choice'];
+      document.body.classList.toggle('ui-accessible', mode === 'accessible' && !authLike.includes(activeScreen));
+    }
+
+    function chooseLayoutMode(mode) {
+      applyLayoutMode(mode);
+      renderHome();
+      alert(state.lang === 'ar' ? 'تم إنشاء الحساب.' : 'Account created successfully.');
+      goToScreen('screen-home');
+    }
+
+    function completeForgot() {
+      clearValidation(['forgot-email']);
+      if (!isValidEmail(document.getElementById('forgot-email').value.trim())) { showFieldError('forgot-email'); return; }
+      alert(state.lang === 'ar' ? 'تم إرسال رابط إعادة التعيين.' : 'Reset link sent.');
+      goToScreen('screen-auth');
+    }
+
+    function signOut() {
+      const remembered = sessionStorage.getItem('rememberedEmail');
+      document.body.classList.remove('ui-accessible');
+      state.glassesConnected = false;
+      state.voice = false;
+      state.editMode = false;
+      state.selectedIds.clear();
+      state.userEmail = '';
+      state.userName = '';
+      document.getElementById('floating-card')?.classList.remove('show');
+      document.getElementById('help-modal')?.classList.remove('show');
+      document.getElementById('lang-menu')?.classList.remove('show');
+      document.getElementById('login-email').value = remembered || '';
+      document.getElementById('login-password').value = remembered ? (sessionStorage.getItem('rememberedPassword') || '') : '';
+      document.getElementById('remember-me').checked = !!remembered;
+      document.getElementById('auth-consent').checked = false;
+      document.getElementById('register-agree').checked = false;
+      clearValidation(['login-email', 'login-password', 'auth-consent', 'register-name', 'register-email', 'register-password', 'register-agree', 'forgot-email']);
+      goToScreen('screen-auth');
+    }
+
+    // ── Rendering ──
+    const AVATAR_COLORS = ['#7f7f85','#9b9ba1','#67676d','#c2c2c7','#8c8c94','#54545c'];
+    function getAvatarColor(name) {
+      let h = 0;
+      for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+      return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+    }
+
+    function avatarHTML(profile, size = 28) {
+      return profile.image
+        ? `<img src="${profile.image}" alt="${profile.name}">`
+        : `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>`;
+    }
+
+    function createIdAvatar(profile) {
+      return profile.image
+        ? `<img src="${profile.image}" alt="${profile.name}">`
+        : `<svg class="id-card-svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2">
+            <rect x="8" y="6" width="48" height="52" rx="12" stroke="rgba(255,255,255,0.22)"/>
+            <circle cx="32" cy="24" r="9"/>
+            <path d="M18 46c2.8-7 22.2-7 28 0"/>
+          </svg>`;
+    }
+
+    function idCardHTML(profile, options = {}) {
+      const badge = options.badge || 'Recognify ID';
+      const action = options.action || 'Open profile';
+      const noteLabel = state.lang === 'ar' ? 'ملاحظات' : 'Notes';
+      const seenLabel = state.lang === 'ar' ? 'آخر ظهور' : 'Last seen';
+      const relationLabel = state.lang === 'ar' ? 'العلاقة' : 'Relationship';
+      const interactionLabel = T[state.lang].interactionCountLabel;
+      return `<div class="id-card">
+        <div class="id-card-header">
+          <div class="section-label" style="margin:0;">${options.header || 'Saved contact'}</div>
+          <div class="id-card-badge">${badge}</div>
+        </div>
+        <div class="id-card-grid">
+          <div class="id-card-avatar" style="background:${profile.image ? 'rgba(255,255,255,0.04)' : getAvatarColor(profile.name)}20; color: var(--text);">${createIdAvatar(profile)}</div>
+          <div>
+            <p class="id-card-name">${profile.name}</p>
+            <p class="id-card-role">${profile.relationship || (state.lang === 'ar' ? 'بدون وصف' : 'No relationship added')}</p>
+            <div class="id-card-lines">
+              <div class="id-line"><span>${relationLabel}</span><strong>${profile.relationship || '—'}</strong></div>
+              <div class="id-line"><span>${seenLabel}</span><strong>${profile.lastInteraction || '—'}</strong></div>
+              <div class="id-line"><span>${interactionLabel}</span><strong>${profile.recognitionCount || 0}</strong></div>
+              <div class="id-line"><span>${noteLabel}</span><strong>${(profile.notes || '').slice(0, 28) || '—'}</strong></div>
+            </div>
+          </div>
+        </div>
+        <div class="id-card-actions">
+          <span class="muted tiny">${options.footer || ''}</span>
+          <button class="text-link" type="button">${action}</button>
+        </div>
+      </div>`;
+    }
+
+    function renderHome() {
+      const list = document.getElementById('home-recent-list');
+      if (!list) return;
+      const totalRecognitions = state.profiles.reduce((sum, p) => sum + (p.recognitionCount || 0), 0);
+      document.getElementById('home-profile-count').textContent = state.lang === 'ar' ? `${state.profiles.length} محفوظ` : `${state.profiles.length} saved`;
+      document.getElementById('home-stat-profiles').textContent = state.profiles.length;
+      document.getElementById('home-stat-recognitions').textContent = totalRecognitions;
+      document.getElementById('home-stat-mode').textContent = state.uiMode === 'accessible' ? T[state.lang].modeSimple : T[state.lang].modeModern;
+      document.getElementById('home-greeting').textContent = state.userEmail
+        ? (state.lang === 'ar' ? `مرحبًا ${state.userName}. هذه نظرة سريعة على آخر النشاط.` : `Welcome back, ${state.userName}. Here's your quick recognition snapshot.`)
+        : T[state.lang].homeGreeting;
+
+      list.innerHTML = '';
+      const recentHistory = state.recognitionHistory.slice(0, 3);
+      if (!recentHistory.length) {
+        list.innerHTML = `<div class="history-empty">${state.lang === 'ar' ? 'لا يوجد تعرّف حديث حتى الآن. افتح شاشة التعرّف وابدأ أول عملية مسح.' : 'No recent recognitions yet. Open the recognition screen and scan your first face.'}</div>`;
+        return;
+      }
+      recentHistory.forEach(entry => {
+        const p = state.profiles.find(profile => profile.id === entry.profileId);
+        if (!p) return;
+        const wrapper = document.createElement('div');
+        wrapper.onclick = () => { state.currentProfileId = p.id; goToScreen('screen-profile'); };
+        wrapper.style.cursor = 'pointer';
+        wrapper.innerHTML = idCardHTML(p, {
+          header: state.lang === 'ar' ? 'تم التعرّف مؤخرًا' : 'Recently recognized',
+          badge: entry.timeLabel,
+          footer: state.lang === 'ar' ? 'افتح البطاقة الكاملة' : 'Open full card',
+          action: state.lang === 'ar' ? 'عرض' : 'View'
+        });
+        list.appendChild(wrapper);
+      });
+    }
+
+    function renderPeople() {
+      const list = document.getElementById('people-list');
+      list.innerHTML = '';
+      document.getElementById('bulk-actions').classList.toggle('hidden', !state.editMode);
+      document.getElementById('edit-toggle').textContent = state.editMode ? T[state.lang].done : T[state.lang].edit;
+      if (!state.profiles.length) {
+        list.innerHTML = `<div class="history-empty">${state.lang === 'ar' ? 'لا يوجد أشخاص محفوظون حتى الآن. أضف أول بطاقة تعريف للبدء.' : 'No saved people yet. Add your first identity card to get started.'}</div>`;
+        return;
+      }
+      state.profiles.forEach(p => {
+        const row = document.createElement('div');
+        row.className = state.editMode ? 'edit-mode' : '';
+        row.style.cursor = 'pointer';
+        row.onclick = () => {
+          if (state.editMode) {
+            state.selectedIds.has(p.id) ? state.selectedIds.delete(p.id) : state.selectedIds.add(p.id);
+            renderPeople();
+          } else {
+            state.currentProfileId = p.id;
+            goToScreen('screen-profile');
+          }
+        };
+        row.innerHTML = idCardHTML(p, {
+          header: state.lang === 'ar' ? 'بطاقة تعريف' : 'Identity card',
+          badge: state.selectedIds.has(p.id) ? (state.lang === 'ar' ? 'محدد' : 'Selected') : (state.lang === 'ar' ? 'محفوظ' : 'Saved'),
+          footer: state.editMode ? (state.lang === 'ar' ? 'اضغط للتحديد' : 'Tap to select') : (state.lang === 'ar' ? 'اضغط لفتح الملف' : 'Tap to open profile'),
+          action: state.editMode ? (state.selectedIds.has(p.id) ? '✓' : '+') : (state.lang === 'ar' ? 'فتح' : 'Open')
+        });
+        list.appendChild(row);
+      });
+    }
+
+    function toggleEditMode() { state.editMode = !state.editMode; if (!state.editMode) state.selectedIds.clear(); renderPeople(); }
+    function cancelEditMode() { state.editMode = false; state.selectedIds.clear(); renderPeople(); }
+    function deleteSelectedProfiles() {
+      if (!state.selectedIds.size) return;
+      state.profiles = state.profiles.filter(p => !state.selectedIds.has(p.id));
+      state.recognitionHistory = state.recognitionHistory.filter(item => !state.selectedIds.has(item.profileId));
+      if (!state.profiles.some(p => p.id === state.currentProfileId)) state.currentProfileId = state.profiles[0]?.id || null;
+      if (!state.profiles.length) document.getElementById('floating-card')?.classList.remove('show');
+      state.selectedIds.clear();
+      state.editMode = false;
+      renderHome();
+      renderPeople();
+    }
+
+    function getCurrentProfile() { return state.profiles.find(p => p.id === state.currentProfileId); }
+
+    function renderCurrentProfile() {
+      const p = getCurrentProfile();
+      if (!p) { goToScreen('screen-people'); return; }
+      const av = document.getElementById('profile-avatar');
+      av.style.background = p.image ? 'transparent' : getAvatarColor(p.name);
+      av.innerHTML = avatarHTML(p, 34);
+      document.getElementById('profile-name').textContent = p.name;
+      document.getElementById('profile-relationship').textContent = p.relationship;
+      document.getElementById('profile-relationship-view').textContent = p.relationship;
+      document.getElementById('profile-notes-view').textContent = p.notes || T[state.lang].noNotes;
+      document.getElementById('profile-last-view').textContent = p.lastInteraction || T[state.lang].noData;
+      document.getElementById('profile-recognition-count-view').textContent = state.lang === 'ar' ? `${p.recognitionCount || 0} ${((p.recognitionCount || 0) === 1) ? 'مرة' : 'مرات'}` : `${p.recognitionCount || 0} ${((p.recognitionCount || 0) === 1) ? 'interaction' : 'interactions'}`;
+      document.getElementById('profile-relationship-input').value = p.relationship;
+      document.getElementById('profile-notes-input').value = p.notes;
+      document.getElementById('profile-last-input').value = p.lastInteraction;
+      cancelProfileEdit();
+    }
+
+    function toggleProfileEdit() {
+      ['profile-relationship-view','profile-notes-view','profile-last-view'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      ['profile-relationship-input','profile-notes-input','profile-last-input','profile-cancel-btn','profile-save-btn'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+      document.getElementById('profile-edit-btn').classList.add('hidden');
+    }
+
+    function cancelProfileEdit() {
+      ['profile-relationship-view','profile-notes-view','profile-last-view'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+      ['profile-relationship-input','profile-notes-input','profile-last-input','profile-cancel-btn','profile-save-btn'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      document.getElementById('profile-edit-btn').classList.remove('hidden');
+    }
+
+    function saveProfileChanges() {
+      const p = getCurrentProfile();
+      if (!p) return;
+      p.relationship = document.getElementById('profile-relationship-input').value.trim();
+      p.notes = document.getElementById('profile-notes-input').value.trim();
+      p.lastInteraction = document.getElementById('profile-last-input').value.trim();
+      renderCurrentProfile();
+      renderHome();
+      renderPeople();
+    }
+
+    function deleteCurrentProfile() {
+      state.profiles = state.profiles.filter(p => p.id !== state.currentProfileId);
+      state.recognitionHistory = state.recognitionHistory.filter(item => item.profileId !== state.currentProfileId);
+      state.currentProfileId = state.profiles[0]?.id || null;
+      if (!state.profiles.length) document.getElementById('floating-card')?.classList.remove('show');
+      renderHome();
+      renderPeople();
+      goToScreen('screen-people');
+    }
+
+    function openAddPerson() {
+      ['new-photo','new-name','new-relationship','new-last','new-notes'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('new-consent').checked = false;
+      clearValidation(['new-photo','new-name','new-relationship','new-consent']);
+      goToScreen('screen-add');
+    }
+
+    function saveNewPerson() {
+      clearValidation(['new-photo','new-name','new-relationship','new-consent']);
+      const name = document.getElementById('new-name').value.trim();
+      const relationship = document.getElementById('new-relationship').value.trim();
+      const lastInteraction = document.getElementById('new-last').value.trim();
+      const notes = document.getElementById('new-notes').value.trim();
+      const photoInput = document.getElementById('new-photo');
+      let valid = true;
+      if (!photoInput.files?.[0]) { showFieldError('new-photo'); valid = false; }
+      if (!name) { showFieldError('new-name'); valid = false; }
+      if (!relationship) { showFieldError('new-relationship'); valid = false; }
+      if (!document.getElementById('new-consent').checked) { showFieldError('new-consent'); valid = false; }
+      if (!valid) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const newId = Math.max(0, ...state.profiles.map(p => p.id)) + 1;
+        state.profiles.unshift({ id: newId, name, relationship, lastInteraction: lastInteraction || T[state.lang].noData, notes: notes || T[state.lang].noNotes, image: e.target.result, recognitionCount: 0, lastSeenDate: null });
+        state.currentProfileId = newId;
+        renderHome();
+        goToScreen('screen-people');
+      };
+      reader.readAsDataURL(photoInput.files[0]);
+    }
+
+    // ── Camera ──
+    function simulateRecognition() {
+      const p = state.profiles[0];
+      if (!p) {
+        alert(state.lang === 'ar' ? 'أضف شخصًا واحدًا على الأقل قبل بدء التعرّف.' : 'Add at least one person before starting recognition.');
+        return;
+      }
+      const now = new Date();
+      const lastRecognitionAt = p.lastRecognitionAt ? new Date(p.lastRecognitionAt) : null;
+      const shouldIncrement = !lastRecognitionAt || (now - lastRecognitionAt) >= 24 * 60 * 60 * 1000;
+      if (shouldIncrement) {
+        p.recognitionCount = (p.recognitionCount || 0) + 1;
+        p.lastRecognitionAt = now.toISOString();
+      }
+      const timeLabel = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      state.recognitionHistory = [{ profileId: p.id, timestamp: now.toISOString(), timeLabel }, ...state.recognitionHistory.filter(item => item.profileId !== p.id)].slice(0, 6);
+      document.getElementById('floating-name').textContent = p.name;
+      document.getElementById('floating-relation').textContent = p.relationship;
+      document.getElementById('floating-notes').textContent = p.notes;
+      document.getElementById('floating-count').textContent = state.lang === 'ar'
+        ? `عدد مرات التفاعل: ${p.recognitionCount}`
+        : `${p.recognitionCount} interaction${p.recognitionCount === 1 ? '' : 's'}`;
+      document.getElementById('floating-card').classList.add('show');
+      renderHome();
+      if (state.voice && 'speechSynthesis' in window) {
+        const u = new SpeechSynthesisUtterance(`${p.name}. ${p.relationship}. ${p.notes}`);
+        u.lang = state.lang === 'ar' ? 'ar-SA' : 'en-US';
+        speechSynthesis.cancel();
+        speechSynthesis.speak(u);
+      }
+    }
+
+    function toggleVoiceFeedback() {
+      state.voice = !state.voice;
+      const settingsBtn = document.getElementById('voice-btn-settings');
+      if (settingsBtn) {
+        settingsBtn.classList.toggle('active', state.voice);
+        const lbl = settingsBtn.querySelector('#voice-toggle-label');
+        if (lbl) lbl.textContent = T[state.lang][state.voice ? 'on' : 'off'];
+        const knob = settingsBtn.querySelector('#voice-toggle-knob');
+        const rect = settingsBtn.querySelector('rect');
+        if (knob) knob.setAttribute('cx', state.voice ? '32' : '12');
+        if (rect) rect.setAttribute('fill', state.voice ? 'var(--primary)' : '#3a3a3c');
+      }
+    }
+
+    function toggleGlassesConnection() {
+      state.glassesConnected = !state.glassesConnected;
+      const glassesBtn = document.getElementById('glasses-btn');
+      const btnText = glassesBtn.querySelector('span');
+      if (btnText) btnText.textContent = T[state.lang][state.glassesConnected ? 'glassesConnected' : 'connectMeta'];
+      const cap = document.getElementById('capture-face-section');
+      if (cap) cap.textContent = state.glassesConnected ? T[state.lang].captureFromGlasses : T[state.lang].captureFromStream;
+    }
+
+    function captureFaceFromStream() {
+      const name = prompt(state.lang === 'ar' ? 'أدخل اسم الشخص:' : 'Enter the person\'s name:');
+      if (!name || !name.trim()) return;
+      const rel = prompt(state.lang === 'ar' ? 'أدخل طبيعة العلاقة:' : 'Enter the relationship:');
+      const id = Math.max(0, ...state.profiles.map(p => p.id)) + 1;
+      state.profiles.unshift({ id, name: name.trim(), relationship: rel || '', lastInteraction: state.lang === 'ar' ? 'الآن' : 'Just now', notes: state.lang === 'ar' ? 'تم الالتقاط من البث المباشر' : 'Captured from live stream', image: '', recognitionCount: 0, lastSeenDate: null });
+      state.currentProfileId = id;
+      renderHome();
+      goToScreen('screen-people');
+      alert(state.lang === 'ar' ? 'تم حفظ الملف الشخصي.' : 'Profile saved.');
+    }
+
+    function deleteAllProfiles() {
+      if (!confirm(state.lang === 'ar' ? 'هل أنت متأكد من حذف جميع البيانات؟' : 'Are you sure you want to delete all saved data?')) return;
+      state.profiles = [];
+      state.recognitionHistory = [];
+      state.currentProfileId = null;
+      state.editMode = false;
+      state.selectedIds.clear();
+      document.getElementById('floating-card')?.classList.remove('show');
+      renderHome();
+      renderPeople();
+      goToScreen('screen-people');
+    }
+
+    // ── Theme ──
+    function setTheme(theme) {
+      state.theme = theme;
+      localStorage.setItem('recognifyTheme', theme);
+      const app = document.getElementById('app');
+      if (theme === 'light') {
+        app.classList.add('theme-light');
+      } else {
+        app.classList.remove('theme-light');
+      }
+      const btns = document.querySelectorAll('#theme-control button');
+      btns.forEach((b, i) => b.classList.toggle('active', (i === 0 && theme === 'dark') || (i === 1 && theme === 'light')));
+      const sub = document.getElementById('theme-sub-text');
+      if (sub) sub.textContent = T[state.lang][theme === 'dark' ? 'themeDark' : 'themeLight'];
+      const icon = document.getElementById('theme-icon');
+      if (icon) {
+        if (theme === 'light') {
+          icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+        } else {
+          icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+        }
+      }
+    }
+
+    function updateLangButtons() {
+      document.getElementById('lang-en-btn')?.classList.toggle('active', state.lang === 'en');
+      document.getElementById('lang-ar-btn')?.classList.toggle('active', state.lang === 'ar');
+    }
+
+    // ── Settings ──
+    function setTextScale(scale) {
+      state.textScale = scale;
+      localStorage.setItem('recognifyTextScale', String(scale));
+      document.documentElement.style.setProperty('--font-scale', scale);
+      const btns = document.querySelectorAll('#size-control button');
+      btns.forEach((b, i) => b.classList.toggle('active', [0.95, 1, 1.15][i] === scale));
+    }
+
+    // ── Language ──
+    function toggleLangMenu() { document.getElementById('lang-menu').classList.toggle('show'); }
+
+    function selectLanguage(lang, el) {
+      setLanguage(lang);
+      document.getElementById('lang-menu').classList.remove('show');
+      document.getElementById('current-lang').textContent = lang.toUpperCase();
+      document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('active'));
+      el?.classList.add('active');
+    }
+
+    document.addEventListener('click', e => {
+      if (!document.querySelector('.lang-selector').contains(e.target))
+        document.getElementById('lang-menu').classList.remove('show');
+    });
+
+    function setLanguage(lang) {
+      state.lang = lang;
+      localStorage.setItem('recognifyLanguage', lang);
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const val = T[lang][el.getAttribute('data-i18n')];
+        if (!val) return;
+        val.includes('<') ? (el.innerHTML = val) : (el.textContent = val);
+      });
+      const placeholders = { 'login-email': lang==='ar'?'البريد الإلكتروني':'Email', 'login-password': lang==='ar'?'كلمة المرور':'Password', 'register-name': lang==='ar'?'الاسم الكامل':'Full name', 'register-email': lang==='ar'?'البريد الإلكتروني':'Email', 'register-password': lang==='ar'?'كلمة المرور':'Password', 'forgot-email': lang==='ar'?'البريد الإلكتروني':'Email', 'new-name': lang==='ar'?'الاسم الكامل':'Full name', 'new-relationship': lang==='ar'?'العلاقة':'Relationship', 'new-last': lang==='ar'?'آخر تفاعل':'Last interaction', 'new-notes': lang==='ar'?'ملاحظات':'Notes' };
+      Object.entries(placeholders).forEach(([id, ph]) => { const el = document.getElementById(id); if (el) el.placeholder = ph; });
+      const vLabel = document.querySelector('#voice-btn-settings #voice-toggle-label');
+      if (vLabel) vLabel.textContent = T[lang][state.voice ? 'on' : 'off'];
+      const gSpan = document.querySelector('#glasses-btn span');
+      if (gSpan) gSpan.textContent = T[lang][state.glassesConnected ? 'glassesConnected' : 'connectMeta'];
+      const captureBtn = document.getElementById('capture-face-section');
+      if (captureBtn) captureBtn.textContent = state.glassesConnected ? T[lang].captureFromGlasses : T[lang].captureFromStream;
+      updateLangButtons();
+      document.getElementById('current-lang').textContent = lang.toUpperCase();
+      document.querySelectorAll('.lang-option').forEach(o => o.classList.toggle('active', (o.textContent.includes('English') && lang === 'en') || (o.textContent.includes('العربية') && lang === 'ar')));
+      const themeSub = document.getElementById('theme-sub-text');
+      if (themeSub) themeSub.textContent = T[lang][state.theme === 'dark' ? 'themeDark' : 'themeLight'];
+      renderHome(); renderPeople();
+      if (document.getElementById('screen-profile').classList.contains('active')) renderCurrentProfile();
+    }
+
+    // ── Help modal ──
+    function toggleHelpModal() { document.getElementById('help-modal').classList.toggle('show'); }
+
+    // ── Status bar clock ──
+    function updateStatusTime() {
+      const now = new Date();
+      document.getElementById('status-time').textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+    }
+    setInterval(updateStatusTime, 1000);
+    updateStatusTime();
+
+    // ── Init ──
+    const savedLanguage = localStorage.getItem('recognifyLanguage') || 'en';
+    const savedTheme = localStorage.getItem('recognifyTheme') || 'dark';
+    const savedTextScale = parseFloat(localStorage.getItem('recognifyTextScale') || '1');
+    applyLayoutMode(localStorage.getItem('recognifyLayoutMode') || 'default');
+    setTheme(savedTheme);
+    setTextScale([0.95, 1, 1.15].includes(savedTextScale) ? savedTextScale : 1);
+    setLanguage(savedLanguage);
+    updateLangButtons();
+    (function loadRemembered() {
+      const email = sessionStorage.getItem('rememberedEmail');
+      const password = sessionStorage.getItem('rememberedPassword');
+      if (email) {
+        document.getElementById('login-email').value = email;
+        document.getElementById('login-password').value = password || '';
+        document.getElementById('remember-me').checked = true;
+      }
+    })();
+  </script>
+</body>
+</html>
